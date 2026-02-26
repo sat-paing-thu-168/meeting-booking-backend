@@ -6,6 +6,6 @@ const { requireAdmin } = require("../middlewares/roles");
 const router = express.Router();
 
 router.post("/login", authController.login);
-router.post("/register", authController.register);
+router.post("/register", auth, requireAdmin, authController.register);
 
 module.exports = router;
