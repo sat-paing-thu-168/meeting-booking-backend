@@ -3,45 +3,25 @@ const { isAdminOrOwner, isUser } = require("../util/helper");
 
 const UNIQUE_VIOLATION_CODE = "23505";
 const CHECK_VIOLATION_CODE = "23514";
-/**
- * BOOKING RULES & ASSUMPTIONS:
- *
- * TIME HANDLING:
- * - All times are stored in UTC (TIMESTAMPTZ in PostgreSQL)
- * - Frontend should send ISO 8601 strings with timezone info (e.g., "2025-03-15T10:00:00Z")
- * - If no timezone provided, assumes UTC
- * - Back-to-back bookings are ALLOWED (e.g., 9:00-10:00 and 10:00-11:00)
- *
- * OVERLAP DETECTION LOGIC:
- * Two bookings overlap if:
- *   start1 < end2 AND end1 > start2
- *
- * This catches:
- * - Identical ranges: (9:00-10:00) and (9:00-10:00)
- * - Partial overlaps: (9:00-11:00) and (10:00-12:00)
- * - One inside another: (9:00-17:00) and (10:00-11:00)
- *
- * Back-to-back is EXCLUDED because:
- *   end1 = start2 means end1 > start2 is false
- */
 
 exports.getAllBookings = async (req, res) => {
   try {
     const { startDate, endDate, userId, limit = 50, offset = 0 } = req.query;
 
     let query = `
-      SELECT 
-        b.id, 
-        b.start_time, 
-        b.end_time, 
-        b.created_at,
-        b.user_id,
-        u.name as user_name,
-        u.role as user_role
-      FROM bookings b
-      JOIN users u ON b.user_id = u.id
-      WHERE 1=1
-    `;
+  SELECT 
+    b.id, 
+    b.start_time, 
+    b.end_time, 
+    b.created_at,
+    b.user_id,
+    u.name as user_name,
+    u.role as user_role
+  FROM bookings b
+  JOIN users u ON b.user_id = u.id
+  WHERE 1=1
+    AND u.is_deleted = false
+`;
 
     const values = [];
     let paramCount = 1;

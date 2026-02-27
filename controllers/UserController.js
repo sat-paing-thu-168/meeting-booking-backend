@@ -325,6 +325,85 @@ const hardDeleteUser = async (req, res) => {
   }
 };
 
+const restoreUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Start transaction
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // Check if user exists and is soft-deleted
+      const userCheck = await client.query(
+        `SELECT id, name, email, role, is_deleted 
+         FROM users 
+         WHERE id = $1`,
+        [id],
+      );
+
+      if (userCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          error: "User not found",
+          details: "No user exists with this ID",
+        });
+      }
+
+      const user = userCheck.rows[0];
+
+      // Check if user is already active
+      if (!user.is_deleted) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          error: "User already active",
+          details: "This user is not deleted",
+        });
+      }
+
+      // Restore the user (set is_deleted to false)
+      const restoreResult = await client.query(
+        `UPDATE users 
+         SET is_deleted = false 
+         WHERE id = $1 
+         RETURNING id, name, email, role, created_at`,
+        [id],
+      );
+
+      await client.query("COMMIT");
+
+      res.json({
+        success: true,
+        message: "User restored successfully",
+        user: restoreResult.rows[0],
+        restoredAt: new Date().toISOString(),
+        restoredBy: {
+          id: req.user.id,
+          name: req.user.name,
+        },
+      });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("Error in restoreUser:", {
+      message: err.message,
+      stack: err.stack,
+      userId: id,
+      adminId: req.user.id,
+    });
+
+    res.status(500).json({
+      error: "Server error",
+      details: "Failed to restore user",
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -332,4 +411,5 @@ module.exports = {
   updateUser,
   deleteUser,
   hardDeleteUser,
+  restoreUser,
 };

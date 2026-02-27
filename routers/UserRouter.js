@@ -11,6 +11,7 @@ router.delete(
   requireAdmin,
   userController.hardDeleteUser,
 );
+router.patch("/:id/restore", auth, requireAdmin, userController.restoreUser);
 router.delete("/:id", auth, requireAdmin, userController.deleteUser);
 router.get("/:id", auth, requireSelfOrAdmin, userController.getUserById);
 router.post("/create", auth, requireAdmin, userController.createUser);
