@@ -42,7 +42,7 @@ const login = async (req, res) => {
       user: userWithoutPassword,
     });
   } catch (err) {
-    console.error("Login error:", err.message);
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error during login" });
   }
 };
@@ -152,7 +152,7 @@ const getMe = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error in getMe:", err.message);
+    console.error("Error in getMe:", err);
     res.status(500).json({
       error: "Server error",
       details: "Failed to fetch user profile",

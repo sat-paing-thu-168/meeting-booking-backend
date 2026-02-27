@@ -73,7 +73,7 @@ exports.getAllBookings = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error in getAllBookings:", err.message);
+    console.error("Error in getAllBookings:", err);
     res.status(500).json({ error: "Server error fetching bookings" });
   }
 };
